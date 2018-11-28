@@ -155,12 +155,15 @@ class TrArrayConverter(object):
             ns = rospy.get_namespace()
             if isinstance(ns, str):
                 sep = '/'
-                self.ns_prefix = sep.join([x for x in (ns).split(sep) if len(x) > 0])
+                self.ns_prefix = sep.join(
+                    [x for x in (ns).split(sep) if len(x) > 0])
             else:
-                rospy.logwarn("Error when fetching namespace, pefix \"\" will be used instead")
+                rospy.logwarn(
+                    "Error when fetching namespace, pefix \"\" will be used instead")
         except KeyError:
             self.ns_prefix = ""
-            rospy.logwarn("Error when fetching namespace, pefix \"\" will be used instead")
+            rospy.logwarn(
+                "Error when fetching namespace, pefix \"\" will be used instead")
 
         # Getting mode param
         try:
@@ -181,16 +184,12 @@ class TrArrayConverter(object):
                           " All sensors will be used for conversion")
 
         # Getting conversion frame
-        try:
+        if rospy.has_param("~conversion_frame"):
             self.conversion_frame = rospy.get_param("~conversion_frame")
-            rospy.logwarn("By specifying the conversion frame you will override the automatic namespacing of the conversion_frame")
-        except KeyError:
-            if self.ns_prefix != "":
-                self.conversion_frame = "base_" + self.ns_prefix
-            else:
-                self.conversion_frame = "base_hub"
+        else:
+            self.conversion_frame = "base_hub"
             rospy.logwarn("Private parameter 'conversion_frame' is not set."
-                          " Default value 'base + _<namespace>' will be used instead.")
+                          " Default value 'base_hub' will be used instead.")
 
         # Getting refresh transform parameter
         try:
@@ -211,11 +210,13 @@ class TrArrayConverter(object):
             self.publisher = rospy.Publisher("point_cloud", PointCloud2,
                                              queue_size=1)
         elif self.mode == "sequential_ranges":
-            self.publisher = rospy.Publisher("sequential_ranges", Range, queue_size=8)
+            self.publisher = rospy.Publisher(
+                "sequential_ranges", Range, queue_size=8)
         elif self.mode == "individual_ranges":
             for i in range(self.number_of_sensors):
                 if self.sensor_mask[i]:
-                    self.publishers.append(rospy.Publisher("range_" + str(i), Range, queue_size=1))
+                    self.publishers.append(rospy.Publisher(
+                        "range_" + str(i), Range, queue_size=1))
                 else:
                     self.publishers.append(None)
         else:
@@ -271,7 +272,8 @@ class TrArrayConverter(object):
 
         if self.mode == "laser_scan":
             if not self.scan_init:
-                self.init_auto_scan(self.tf_buffer, self.conversion_frame, self.data)
+                self.init_auto_scan(
+                    self.tf_buffer, self.conversion_frame, self.data)
             else:
                 if self.force_tf_refresh:
                     self.tf_list = gather_sensor_tf(self.tf_buffer, self.conversion_frame, self.data,
@@ -283,12 +285,14 @@ class TrArrayConverter(object):
 
         elif self.mode == "point_cloud":
             if not self.pt_cld_init:
-                self.init_point_cloud(self.tf_buffer, self.conversion_frame, self.data)
+                self.init_point_cloud(
+                    self.tf_buffer, self.conversion_frame, self.data)
             else:
                 if self.force_tf_refresh:
                     self.tf_list = gather_sensor_tf(self.tf_buffer, self.conversion_frame, self.data,
                                                     self.sensor_mask)
-                result = to_point_cloud(self.tf_list, self.data, self.conversion_frame)
+                result = to_point_cloud(
+                    self.tf_list, self.data, self.conversion_frame)
                 self.publisher.publish(result)
 
         elif self.mode == "sequential_ranges":
